@@ -1,0 +1,21 @@
+{
+  "name": "iris",
+  "version": "0.0.1",
+  "description": "Handles co-browsing and chat communication.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rishihahs/Iris.git"
+  },
+  "keywords": [
+    "co-browsing"
+  ],
+  "author": "Rishi Shah <rishihahs@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rishihahs/Iris/issues"
+  }
+}
