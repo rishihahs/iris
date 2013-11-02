@@ -17,5 +17,10 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/rishihahs/Iris/issues"
+  },
+  "dependencies": {
+    "express": "~3.4.4",
+    "socket.io": "~0.9.16",
+    "underscore": "~1.5.2"
   }
 }
