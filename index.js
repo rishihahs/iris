@@ -14,6 +14,8 @@ io.sockets.on('connection', function(socket) {
         onSubscribe(socket, data);
     });
 
+    require('./chat')(socket);
+
     // Remove rep from available if they disconnect
     socket.on('disconnect', function() {
         var index = representatives.indexOf(socket);
