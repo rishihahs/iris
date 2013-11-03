@@ -10,17 +10,17 @@ var representatives = []; // List of connected reps
 var waitingList = []; // List of clients waiting
 
 io.sockets.on('connection', function(socket) {
-    socket.on('subscribe', function(data) {
+    socket.on('subscribe', function(data) {console.log('subscribed');
         // if rep
-        if (!data.type || data.type !== 'support') {
+        if (data && data.type && data.type === 'support') {console.log('if rep');
             // Handle waiting list if there is one
-            if (waitingList.length > 0) {
+            if (waitingList.length > 0) {console.log('clearing waiting list');
                 var room = createUuid();
                 var client = waitingList.shift();
                 client.join(room);
                 socket.join(room);
                 notifyRoom(room, 'start', {
-                    roomName: uuid
+                    roomName: room
                 }); // Notify room to start
             } else {
                 representatives.push(socket);
@@ -30,7 +30,7 @@ io.sockets.on('connection', function(socket) {
         }
 
         // if client
-        var uuid = createUuid();
+        var uuid = createUuid();console.log('uuid: ' + uuid);
         socket.join(uuid);
 
         // put available rep in same room
@@ -39,7 +39,7 @@ io.sockets.on('connection', function(socket) {
             notifyRoom(uuid, 'start', {
                 roomName: uuid
             });
-        } else {
+        } else {console.log('put in waiting list');
             waitingList.push(socket);
         }
 
@@ -54,15 +54,14 @@ io.sockets.on('connection', function(socket) {
         }
 
         index = waitingList.indexOf(socket);
-        if (index > -1) {
+        if (index > -1) {console.log('spliced from waiting list');
             waitingList.splice(index, 1);
         }
     });
 });
 
 function notifyRoom(room, event, data) {
-    var inside = io.sockets['in'];
-    inside(room).emit(event, data);
+    io.sockets.in(room).emit(event, data);
 }
 
 function createUuid() {
