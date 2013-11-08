@@ -1,9 +1,9 @@
 module.exports = function(socket) {
 
     socket.on('chat', function(data) {
-        socket.get('room', function(err, room) {
-            socket.broadcast.to(room).emit('chat', data);
-        });
+        if (data && data.room) {
+            socket.broadcast.to(data.room).emit('chat', data);
+        }
     });
 
 };
