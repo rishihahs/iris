@@ -2,7 +2,9 @@ var _ = require('underscore'),
     express = require('express'),
     app = require('express')(),
     server = require('http').createServer(app),
-    io = require('socket.io').listen(server);
+    io = require('socket.io').listen(server),
+    url = require('url'),
+    options = require('./options.json');
 
 server.listen(process.env.PORT || 3000);
 
@@ -26,10 +28,19 @@ function onSubscribe(socket, data) {
     var room = (data && data.room) ? data.room : createUuid(); // Existing or new room
     var occupants = io.sockets.clients(room).length; // People currently in room
 
+    // Verify URL
+    var site = data && data.url;
+    // SECURITY: Disabled for Dev
+    // if (url.parse(site).hostname !== options.hostname) {
+    //     socket.disconnect();
+    //     return;
+    // }
+
     socket.join(room);
     if (occupants === 0) {console.log(room);
         io.sockets.in(helpDesk).emit('newCitizen', {
-            room: room
+            room: room,
+            url: site
         });
     } else {
         io.sockets.in(room).emit('start', {
