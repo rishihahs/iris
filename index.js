@@ -19,6 +19,8 @@ io.sockets.on('connection', function(socket) {
 
     require('./chat')(socket);
 
+    require('./cobrowse')(socket);
+
     socket.on('subscribe', function(data) {
         onSubscribe(socket, data);
     });
