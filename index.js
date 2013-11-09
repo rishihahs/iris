@@ -2,111 +2,52 @@ var _ = require('underscore'),
     express = require('express'),
     app = require('express')(),
     server = require('http').createServer(app),
-    io = require('socket.io').listen(server);
+    io = require('socket.io').listen(server),
+    url = require('url'),
+    options = require('./options.json');
 
 server.listen(process.env.PORT || 3000);
 
-var representatives = []; // List of connected reps
-var waitingList = []; // List of clients waiting
+// Room where service requests are sent
+var helpDesk = createUuid();
 
 io.sockets.on('connection', function(socket) {
-    socket.on('subscribe', function(data) {
-        onSubscribe(socket, data);
+    // Helpdesk Connections
+    socket.on('helpdesk', function(data) {
+        socket.join(helpDesk);
     });
 
     require('./chat')(socket);
 
-    // Remove rep from available if they disconnect
-    socket.on('disconnect', function() {
-        var index = representatives.indexOf(socket);
-        if (index > -1) {
-            representatives.splice(index, 1);
-            return;
-        }
-
-        index = waitingList.indexOf(socket);
-        if (index > -1) {
-            console.log('spliced from waiting list');
-            waitingList.splice(index, 1);
-            return;
-        }
-
-        // Clear the room since person disconnected
-        socket.get('room', function(err, room) {console.log('clearing room');
-            _.each(io.sockets.clients(room), function(client) {
-                // Return if client in room is same as person who disconnected
-                if (client.id === socket.id) {
-                    return;
-                }
-
-                client.get('type', function(err, type) {console.log('subscribing client: ' + type);
-                    onSubscribe(client, type ? {
-                        type: type
-                    } : null);
-                });
-            });
-        });
+    socket.on('subscribe', function(data) {
+        onSubscribe(socket, data);
     });
 });
 
 function onSubscribe(socket, data) {
-    console.log('subscribed');
-    // if rep
-    if (data && data.type && data.type === 'support') {
-        console.log('if rep');
-        socket.set('type', data.type, function() {});
-        // Handle waiting list if there is one
-        if (waitingList.length > 0) {
-            console.log('clearing waiting list');
-            var room = createUuid(),
-                client = waitingList.shift();
-            client.join(room);
-            socket.join(room);
+    var room = (data && data.room) ? data.room : createUuid(); // Existing or new room
+    var occupants = io.sockets.clients(room).length; // People currently in room
 
-            // Set Room In Socket
-            client.set('room', room, function() {
-                socket.set('room', room, function() {
-                    notifyRoom(room, 'start', {
-                        roomName: room
-                    }); // Notify room to start
-                });
-            });
+    // Verify URL
+    var site = data && data.url;
+    // SECURITY: Disabled for Dev
+    // if (url.parse(site).hostname !== options.hostname) {
+    //     socket.disconnect();
+    //     return;
+    // }
 
-
-        } else {
-            representatives.push(socket);
-        }
-
-        return;
-    }
-
-    // if client
-    var uuid = createUuid();
-    console.log('uuid: ' + uuid);
-    socket.join(uuid);
-
-    // put available rep in same room
-    if (representatives.length > 0) {
-        var rep = representatives.shift();
-        rep.join(uuid);
-
-        // Set Room In Socket
-        rep.set('room', uuid, function() {
-            socket.set('room', uuid, function() {
-                notifyRoom(uuid, 'start', {
-                    roomName: uuid
-                });
-            });
+    socket.join(room);
+    if (occupants === 0) {console.log(room);
+        io.sockets.in(helpDesk).emit('newCitizen', {
+            room: room,
+            url: site
         });
-
     } else {
-        console.log('put in waiting list');
-        waitingList.push(socket);
+        io.sockets.in(room).emit('start', {
+            room: room
+        });
     }
-}
 
-function notifyRoom(room, event, data) {
-    io.sockets. in (room).emit(event, data);
 }
 
 function createUuid() {
